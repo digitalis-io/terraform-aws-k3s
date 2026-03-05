@@ -1,0 +1,65 @@
+#cloud-config
+
+package_update: true
+package_upgrade: false
+
+packages:
+  - curl
+  - git
+  - tar
+  - jq
+  - wireguard
+
+write_files:
+  - path: /etc/rancher/k3s/config.yaml
+    permissions: '0600'
+    content: |
+      node-name: "${node_name}"
+      %{ if node_labels != "" ~}
+      node-label:
+        - "${node_labels}"
+      %{ endif ~}
+
+runcmd:
+  # Wait for network
+  - while ! ping -c 1 google.com &>/dev/null; do sleep 1; done
+
+  # Wait for k3s API to be available
+  - |
+    echo "Waiting for k3s API at ${k3s_url}..."
+    until curl -sk "${k3s_url}/healthz" &>/dev/null; do
+      sleep 10
+    done
+
+  # Install k3s agent
+  - |
+    export K3S_TOKEN="${k3s_token}"
+    export K3S_URL="${k3s_url}"
+    %{ if k3s_version != "" ~}
+    export INSTALL_K3S_VERSION="${k3s_version}"
+    %{ endif ~}
+    export INSTALL_K3S_EXEC="agent ${k3s_agent_args}"
+
+    curl -sfL https://get.k3s.io | sh -
+
+%{ if install_k9s ~}
+  # Install k9s
+  - |
+    K9S_VERSION=$(curl -s https://api.github.com/repos/derailed/k9s/releases/latest | jq -r .tag_name)
+    ARCH=$(uname -m | sed 's/x86_64/amd64/' | sed 's/aarch64/arm64/')
+    curl -fsSL "https://github.com/derailed/k9s/releases/download/$${K9S_VERSION}/k9s_Linux_$${ARCH}.tar.gz" | tar -xzf - -C /tmp
+    mv /tmp/k9s /usr/local/bin/k9s
+    chmod +x /usr/local/bin/k9s
+%{ endif ~}
+
+%{ if install_stern ~}
+  # Install stern
+  - |
+    STERN_VERSION=$(curl -s https://api.github.com/repos/stern/stern/releases/latest | jq -r .tag_name)
+    ARCH=$(uname -m | sed 's/x86_64/amd64/' | sed 's/aarch64/arm64/')
+    curl -fsSL "https://github.com/stern/stern/releases/download/$${STERN_VERSION}/stern_$${STERN_VERSION#v}_linux_$${ARCH}.tar.gz" | tar -xzf - -C /tmp
+    mv /tmp/stern /usr/local/bin/stern
+    chmod +x /usr/local/bin/stern
+%{ endif ~}
+
+final_message: "K3s agent ${node_name} ready after $UPTIME seconds"

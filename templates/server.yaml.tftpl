@@ -1,0 +1,104 @@
+#cloud-config
+
+package_update: true
+package_upgrade: false
+
+packages:
+  - curl
+  - git
+  - tar
+  - jq
+  - wireguard
+
+write_files:
+  - path: /etc/profile.d/k3s.sh
+    permissions: '0644'
+    content: |
+      export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+      alias k=kubectl
+
+  - path: /etc/rancher/k3s/config.yaml
+    permissions: '0600'
+    content: |
+      node-name: "${node_name}"
+      %{ if node_labels != "" ~}
+      node-label:
+        - "${node_labels}"
+      %{ endif ~}
+      %{ if node_taints != "" ~}
+      node-taint:
+        - "${node_taints}"
+      %{ endif ~}
+      flannel-backend: "${flannel_backend}"
+      disable:
+        - traefik
+      write-kubeconfig-mode: "0644"
+      tls-san:
+        - "${node_name}"
+      %{ if !is_first_server ~}
+      server: "https://${primary_server_ip}:6443"
+      %{ endif ~}
+
+runcmd:
+  # Wait for network
+  - while ! ping -c 1 google.com &>/dev/null; do sleep 1; done
+
+  # Install k3s server
+  - |
+    export K3S_TOKEN="${k3s_token}"
+    %{ if k3s_version != "" ~}
+    export INSTALL_K3S_VERSION="${k3s_version}"
+    %{ endif ~}
+
+    %{ if is_first_server ~}
+    # First server - bootstrap the cluster
+    export INSTALL_K3S_EXEC="server --cluster-init ${k3s_server_args}"
+    %{ else ~}
+    # Additional server - join existing cluster
+    export K3S_URL="https://${primary_server_ip}:6443"
+    export INSTALL_K3S_EXEC="server ${k3s_server_args}"
+    %{ endif ~}
+
+    curl -sfL https://get.k3s.io | sh -
+
+  # Wait for k3s to be ready
+  - |
+    until kubectl get nodes &>/dev/null; do
+      sleep 5
+    done
+
+%{ if install_helm ~}
+  # Install Helm
+  - |
+    HELM_VERSION=$(curl -s https://api.github.com/repos/helm/helm/releases/latest | jq -r .tag_name)
+    ARCH=$(uname -m | sed 's/x86_64/amd64/' | sed 's/aarch64/arm64/')
+    curl -fsSL "https://get.helm.sh/helm-$${HELM_VERSION}-linux-$${ARCH}.tar.gz" | tar -xzf - -C /tmp
+    mv /tmp/linux-$${ARCH}/helm /usr/local/bin/helm
+    chmod +x /usr/local/bin/helm
+    rm -rf /tmp/linux-$${ARCH}
+%{ endif ~}
+
+%{ if install_k9s ~}
+  # Install k9s
+  - |
+    K9S_VERSION=$(curl -s https://api.github.com/repos/derailed/k9s/releases/latest | jq -r .tag_name)
+    ARCH=$(uname -m | sed 's/x86_64/amd64/' | sed 's/aarch64/arm64/')
+    curl -fsSL "https://github.com/derailed/k9s/releases/download/$${K9S_VERSION}/k9s_Linux_$${ARCH}.tar.gz" | tar -xzf - -C /tmp
+    mv /tmp/k9s /usr/local/bin/k9s
+    chmod +x /usr/local/bin/k9s
+%{ endif ~}
+
+%{ if install_stern ~}
+  # Install stern
+  - |
+    STERN_VERSION=$(curl -s https://api.github.com/repos/stern/stern/releases/latest | jq -r .tag_name)
+    ARCH=$(uname -m | sed 's/x86_64/amd64/' | sed 's/aarch64/arm64/')
+    curl -fsSL "https://github.com/stern/stern/releases/download/$${STERN_VERSION}/stern_$${STERN_VERSION#v}_linux_$${ARCH}.tar.gz" | tar -xzf - -C /tmp
+    mv /tmp/stern /usr/local/bin/stern
+    chmod +x /usr/local/bin/stern
+%{ endif ~}
+
+  # Set correct permissions on kubeconfig
+  - chmod 644 /etc/rancher/k3s/k3s.yaml
+
+final_message: "K3s server ${node_name} ready after $UPTIME seconds"
