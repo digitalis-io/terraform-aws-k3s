@@ -27,21 +27,21 @@ resource "aws_instance" "agent" {
   }
 
   user_data = templatefile("${path.module}/templates/agent.yaml.tftpl", {
-    cluster_name      = var.cluster_name
-    k3s_token         = random_password.k3s_token.result
-    k3s_version       = var.k3s_version
-    k3s_agent_args    = var.k3s_agent_extra_args
-    k3s_url           = "https://${local.primary_server_private_ip}:6443"
-    install_k9s       = var.install_k9s
-    install_stern     = var.install_stern
-    node_name         = "${var.cluster_name}-agent-${count.index + 1}"
-    node_labels       = "node.kubernetes.io/role=worker"
+    cluster_name   = var.cluster_name
+    k3s_token      = random_password.k3s_token.result
+    k3s_version    = var.k3s_version
+    k3s_agent_args = var.k3s_agent_extra_args
+    k3s_url        = "https://${local.primary_server_private_ip}:6443"
+    install_k9s    = var.install_k9s
+    install_stern  = var.install_stern
+    node_name      = "${var.cluster_name}-agent-${count.index + 1}"
+    node_labels    = "node.kubernetes.io/role=worker"
   })
 
   tags = merge(local.common_tags, {
-    Name                   = "${var.cluster_name}-agent-${count.index + 1}"
-    "k3s-role"             = "agent"
-    "k3s-agent-index"      = count.index
+    Name              = "${var.cluster_name}-agent-${count.index + 1}"
+    "k3s-role"        = "agent"
+    "k3s-agent-index" = count.index
   })
 
   lifecycle {

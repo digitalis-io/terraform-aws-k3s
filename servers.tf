@@ -27,25 +27,25 @@ resource "aws_instance" "server" {
   }
 
   user_data = templatefile("${path.module}/templates/server.yaml.tftpl", {
-    cluster_name       = var.cluster_name
-    k3s_token          = random_password.k3s_token.result
-    k3s_version        = var.k3s_version
-    k3s_server_args    = var.k3s_server_extra_args
-    flannel_backend    = var.flannel_backend
-    is_first_server    = count.index == 0
-    primary_server_ip  = local.primary_server_private_ip
-    install_helm       = var.install_helm
-    install_k9s        = var.install_k9s
-    install_stern      = var.install_stern
-    node_name          = "${var.cluster_name}-server-${count.index + 1}"
-    node_labels        = "node.kubernetes.io/role=control-plane"
-    node_taints        = ""
+    cluster_name      = var.cluster_name
+    k3s_token         = random_password.k3s_token.result
+    k3s_version       = var.k3s_version
+    k3s_server_args   = var.k3s_server_extra_args
+    flannel_backend   = var.flannel_backend
+    is_first_server   = count.index == 0
+    primary_server_ip = local.primary_server_private_ip
+    install_helm      = var.install_helm
+    install_k9s       = var.install_k9s
+    install_stern     = var.install_stern
+    node_name         = "${var.cluster_name}-server-${count.index + 1}"
+    node_labels       = "node.kubernetes.io/role=control-plane"
+    node_taints       = ""
   })
 
   tags = merge(local.common_tags, {
-    Name                     = "${var.cluster_name}-server-${count.index + 1}"
-    "k3s-role"               = "server"
-    "k3s-server-index"       = count.index
+    Name               = "${var.cluster_name}-server-${count.index + 1}"
+    "k3s-role"         = "server"
+    "k3s-server-index" = count.index
   })
 
   lifecycle {

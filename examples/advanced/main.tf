@@ -27,12 +27,12 @@ module "k3s" {
   ssh_key_name = var.ssh_key_name
 
   # High availability setup
-  server_count         = 3
-  server_instance_type = "t3.large"
+  server_count            = 3
+  server_instance_type    = "t3.large"
   server_root_volume_size = 100
 
-  agent_count          = 3
-  agent_instance_type  = "t3.xlarge"
+  agent_count            = 3
+  agent_instance_type    = "t3.xlarge"
   agent_root_volume_size = 200
 
   # Custom networking
@@ -45,8 +45,8 @@ module "k3s" {
   nodeport_allowed_cidrs = ["0.0.0.0/0"]
 
   # k3s configuration
-  k3s_version          = "v1.29.0+k3s1"
-  flannel_backend      = "vxlan"
+  k3s_version           = "v1.29.0+k3s1"
+  flannel_backend       = "vxlan"
   k3s_server_extra_args = "--disable-cloud-controller"
   k3s_agent_extra_args  = ""
 
