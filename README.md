@@ -19,25 +19,25 @@ This Terraform module deploys a production-ready [k3s](https://k3s.io/) Kubernet
 │                        AWS VPC (10.13.0.0/16)                    │
 ├──────────────────────────────────────────────────────────────────┤
 │                                                                  │
-│  ┌────────────────┐  ┌────────────────┐  ┌────────────────┐    │
-│  │  Public Subnet │  │  Public Subnet │  │  Public Subnet │    │
-│  │  10.13.1.0/24  │  │  10.13.2.0/24  │  │  10.13.3.0/24  │    │
-│  │    (AZ-1)      │  │    (AZ-2)      │  │    (AZ-3)      │    │
-│  └───────┬────────┘  └───────┬────────┘  └───────┬────────┘    │
-│          │                   │                   │              │
-│  ┌───────┴────────┐  ┌───────┴────────┐  ┌───────┴────────┐    │
-│  │   Server-1     │  │   Server-2     │  │   Server-3     │    │
-│  │   (Control)    │  │   (Control)    │  │   (Control)    │    │
-│  │   .10          │  │   .10          │  │   .10          │    │
-│  └────────────────┘  └────────────────┘  └────────────────┘    │
+│  ┌────────────────┐  ┌────────────────┐  ┌────────────────┐      │
+│  │  Public Subnet │  │  Public Subnet │  │  Public Subnet │      │
+│  │  10.13.1.0/24  │  │  10.13.2.0/24  │  │  10.13.3.0/24  │      │
+│  │    (AZ-1)      │  │    (AZ-2)      │  │    (AZ-3)      │      │
+│  └───────┬────────┘  └───────┬────────┘  └───────┬────────┘      │
+│          │                   │                   │               │
+│  ┌───────┴────────┐  ┌───────┴────────┐  ┌───────┴────────┐      │
+│  │   Server-1     │  │   Server-2     │  │   Server-3     │      │
+│  │   (Control)    │  │   (Control)    │  │   (Control)    │      │
+│  │   .10          │  │   .10          │  │   .10          │      │
+│  └────────────────┘  └────────────────┘  └────────────────┘      │
 │                                                                  │
-│  ┌───────┴────────┐  ┌───────┴────────┐  ┌───────┴────────┐    │
-│  │   Agent-1      │  │   Agent-2      │  │   Agent-3      │    │
-│  │   (Worker)     │  │   (Worker)     │  │   (Worker)     │    │
-│  │   .100         │  │   .100         │  │   .100         │    │
-│  └────────────────┘  └────────────────┘  └────────────────┘    │
+│  ┌───────┴────────┐  ┌───────┴────────┐  ┌───────┴────────┐      │
+│  │   Agent-1      │  │   Agent-2      │  │   Agent-3      │      │
+│  │   (Worker)     │  │   (Worker)     │  │   (Worker)     │      │
+│  │   .100         │  │   .100         │  │   .100         │      │
+│  └────────────────┘  └────────────────┘  └────────────────┘      │
 │                                                                  │
-│  Security Group: SSH(22), K3s API(6443), NodePort(30000-32767) │
+│  Security Group: SSH(22), K3s API(6443), NodePort(30000-32767)   │
 │                                                                  │
 └──────────────────────────────────────────────────────────────────┘
 ```
@@ -117,6 +117,7 @@ module "k3s" {
 | agent_count | Number of worker agents | `number` | `2` |
 | server_instance_type | EC2 instance type for servers | `string` | `"t3.medium"` |
 | agent_instance_type | EC2 instance type for agents | `string` | `"t3.medium"` |
+| ami_architecture | AMI architecture (amd64 or arm64) | `string` | `"amd64"` |
 | server_root_volume_size | Root volume size (GB) for servers | `number` | `50` |
 | agent_root_volume_size | Root volume size (GB) for agents | `number` | `50` |
 
@@ -208,7 +209,9 @@ data "aws_ami" "digitalis_hardened" {
 }
 ```
 
-You can override with a custom AMI using the `ami_id` variable.
+You can select the architecture using the `ami_architecture` variable (`amd64` or `arm64`). Ensure your instance types match the architecture:
+- **amd64** (default): Use `t3`, `m6i`, `c6i`, etc.
+- **arm64**: Use `t4g`, `m7g`, `c7g`, `r7g`, etc.
 
 ## Security Considerations
 

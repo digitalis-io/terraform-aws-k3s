@@ -30,7 +30,7 @@ variable "server_count" {
 }
 
 variable "server_instance_type" {
-  description = "EC2 instance type for server nodes"
+  description = "EC2 instance type for server nodes (must match ami_architecture)"
   type        = string
   default     = "t3.medium"
 }
@@ -58,7 +58,7 @@ variable "agent_count" {
 }
 
 variable "agent_instance_type" {
-  description = "EC2 instance type for agent nodes"
+  description = "EC2 instance type for agent nodes (must match ami_architecture)"
   type        = string
   default     = "t3.medium"
 }
@@ -89,6 +89,17 @@ variable "ami_id" {
   description = "AMI ID to use for instances. If not specified, uses the Digitalis hardened Ubuntu AMI."
   type        = string
   default     = null
+}
+
+variable "ami_architecture" {
+  description = "Architecture for the default AMI (amd64 or arm64). Must match instance type architecture."
+  type        = string
+  default     = "amd64"
+
+  validation {
+    condition     = contains(["amd64", "arm64"], var.ami_architecture)
+    error_message = "AMI architecture must be 'amd64' or 'arm64'."
+  }
 }
 
 # -----------------------------------------------------------------------------

@@ -10,20 +10,7 @@ packages:
   - jq
   - wireguard
 
-write_files:
-  - path: /etc/rancher/k3s/config.yaml
-    permissions: '0600'
-    content: |
-      node-name: "${node_name}"
-      %{ if node_labels != "" ~}
-      node-label:
-        - "${node_labels}"
-      %{ endif ~}
-
 runcmd:
-  # Wait for network
-  - while ! ping -c 1 google.com &>/dev/null; do sleep 1; done
-
   # Wait for k3s API to be available
   - |
     echo "Waiting for k3s API at ${k3s_url}..."

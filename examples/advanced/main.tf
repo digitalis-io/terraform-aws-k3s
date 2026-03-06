@@ -17,7 +17,7 @@
 # -----------------------------------------------------------------------------
 
 provider "aws" {
-  region = "eu-west-1"
+  region = var.region
 }
 
 module "k3s" {
@@ -86,6 +86,12 @@ module "k3s" {
 # -----------------------------------------------------------------------------
 # Variables
 # -----------------------------------------------------------------------------
+
+variable "region" {
+  description = "AWS region to deploy the cluster"
+  type        = string
+  default     = "eu-west-1"
+}
 
 variable "ssh_key_name" {
   description = "Name of the EC2 key pair for SSH access"

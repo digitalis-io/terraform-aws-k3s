@@ -14,7 +14,7 @@ data "aws_ami" "digitalis_hardened" {
 
   filter {
     name   = "name"
-    values = ["digitalis-hardened*"]
+    values = ["Ubuntu2404-digitalis-hardened-ami-${var.ami_architecture}-*"]
   }
 }
 

@@ -17,32 +17,7 @@ write_files:
       export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
       alias k=kubectl
 
-  - path: /etc/rancher/k3s/config.yaml
-    permissions: '0600'
-    content: |
-      node-name: "${node_name}"
-      %{ if node_labels != "" ~}
-      node-label:
-        - "${node_labels}"
-      %{ endif ~}
-      %{ if node_taints != "" ~}
-      node-taint:
-        - "${node_taints}"
-      %{ endif ~}
-      flannel-backend: "${flannel_backend}"
-      disable:
-        - traefik
-      write-kubeconfig-mode: "0644"
-      tls-san:
-        - "${node_name}"
-      %{ if !is_first_server ~}
-      server: "https://${primary_server_ip}:6443"
-      %{ endif ~}
-
 runcmd:
-  # Wait for network
-  - while ! ping -c 1 google.com &>/dev/null; do sleep 1; done
-
   # Install k3s server
   - |
     export K3S_TOKEN="${k3s_token}"
